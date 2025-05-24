@@ -4,406 +4,436 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Set page configuration with dark theme
 st.set_page_config(
-    page_title="Student Performance Analysis",
+    page_title="🎓 Student Performance Analytics",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    page_icon="📊"
 )
 
-# Add custom CSS for better visibility on dark background
 st.markdown("""
 <style>
+    .main-header {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 0.5rem 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .chart-container {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
     .stPlotlyChart {
-        background-color: rgba(0,0,0,0) !important;
+        background: transparent !important;
     }
-    .st-emotion-cache-16txtl3 h1, .st-emotion-cache-16txtl3 h2, .st-emotion-cache-16txtl3 h3 {
-        color: white !important;
+    .team-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+        padding: 0 1rem;
     }
-    .st-emotion-cache-16txtl3 p, .st-emotion-cache-16txtl3 ol, .st-emotion-cache-16txtl3 ul, .st-emotion-cache-16txtl3 dl {
-        color: #f0f0f0 !important;
+    .team-member {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        color: white;
+        font-weight: 500;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .team-member:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    }
+    .sidebar .stRadio > label {
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .stInfo {
+        background: rgba(102, 126, 234, 0.1);
+        border-left: 4px solid #667eea;
+    }
+    
+    /* Enhanced Sidebar Styling */
+    .css-1d391kg {
+        background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%) !important;
+        border-right: 3px solid #667eea !important;
+    }
+    
+    .stSidebar > div:first-child {
+        background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+        border-right: 3px solid #667eea;
+    }
+    
+    .stSidebar .stMarkdown h2 {
+        color: #ffffff !important;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+        padding: 1rem 0 !important;
+        margin-bottom: 1.5rem !important;
+        border-bottom: 2px solid #667eea !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+    }
+    
+    .stSidebar .stRadio > div {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 10px !important;
+        padding: 1rem !important;
+        margin: 0.5rem 0 !important;
+        border: 1px solid rgba(255, 255, 255, .1) !important;
+    }
+    
+    .stSidebar .stRadio > div > label {
+        color: #ffffff !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 0.75rem !important;
+        margin: 0.3rem 0 !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        cursor: pointer !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid transparent !important;
+    }
+    
+    .stSidebar .stRadio > div > label:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        transform: translateX(5px) !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    .stSidebar .stRadio > div > label[data-checked="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        transform: translateX(8px) !important;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+        font-weight: 600 !important;
+    }
+    
+    .stSidebar .stRadio input[type="radio"] {
+        accent-color: #667eea !important;
+        margin-right: 0.75rem !important;
+        transform: scale(1.2) !important;
+    }
+    
+    .main-header {
+        font-size: 3rem;
+        font-weight: bold;
+        text-align: center;
+        background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 2rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .metric-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 0.5rem 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stMetric {
+        background: transparent;
+    }
+    
+    .plot-container {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1rem;
+        border-radius: 15px;
+        margin: 1rem 0;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Remove duplicate sidebar styling */
+    .css-1d391kg {
+        display: none;
+    }
+    
+    /* Ensure single sidebar */
+    section[data-testid="stSidebar"] > div:first-child {
+        background: linear-gradient(180deg, #2C3E50 0%, #3498DB 100%);
+        border-radius: 0 15px 15px 0;
+    }
+    
+    /* Hide duplicate navigation elements */
+    .css-17lntkn, .css-pkbazv {
+        display: none !important;
+    }
+    
+    /* Main content area styling */
+    .block-container {
+        padding-top: 2rem;
+        max-width: 100%;
+    }
+    
+    /* Sidebar navigation styling */
+    .css-1lcbmhc .css-1outpf7 {
+        background-color: transparent;
+    }
+    
+    /* Remove extra navigation elements */
+    [data-testid="stSidebar"] .css-17lntkn {
+        display: none;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Load data
 @st.cache_data
 def load_data():
     df = pd.read_csv("Students_Grading_Dataset.csv")
-    # Handle missing values
     df = df.replace("", np.nan)
-    
-    # Convert numeric columns to appropriate types
     numeric_cols = ['Attendance (%)', 'Midterm_Score', 'Final_Score', 'Assignments_Avg',
                     'Quizzes_Avg', 'Participation_Score', 'Projects_Score', 'Total_Score',
                     'Study_Hours_per_Week', 'Stress_Level (1-10)', 'Sleep_Hours_per_Night']
-    
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
-    
     return df
 
-df = load_data()
-
-# Title and header section
-st.title("Student Academic Performance Dashboard")
-
-# Team member section
-st.markdown("""
-### Team Members
-- Mai Vũ Như Quỳnh
-- Lê Ngọc Khánh
-- Võ Thị Tuyết Mai
-- Phạm Nguyễn Tường Lam
-- Ngô Quỳnh Anh
-- Trần Quang Thiện Thông
-""")
-
-# Introduction text
-st.markdown("""
-This dashboard analyzes the academic performance and related factors of students based on various metrics.
-Explore the visualizations by selecting different charts from the sidebar.
-""")
-
-# Show raw data if requested
-with st.expander("Show Raw Data"):
-    st.dataframe(df)
-
-# Sidebar navigation
-st.sidebar.title("Navigation")
-chart_options = [
-    "1. Distribution of Final Grades",
-    "2. Average Performance by Department",
-    "3. Grade Distribution by Gender",
-    "4. Grade Distribution Hierarchy",
-    "5. Study Hours vs Total Score",
-    "6. Attendance Impact on Final Score",
-    "7. Distribution of Score Components",
-    "8. Internet Access Impact on Performance",
-    "9. Stress Level vs Performance",
-    "10. Parent Education & Student Performance"
-]
-selected_chart = st.sidebar.radio("Select a chart to view:", chart_options)
-
-# Display selected chart
-if selected_chart == "1. Distribution of Final Grades":
-    st.subheader("1. Distribution of Final Grades")
+def create_grade_distribution():
     grade_counts = df['Grade'].value_counts().reset_index()
     grade_counts.columns = ['Grade', 'Count']
     grade_counts = grade_counts.sort_values(by='Grade')
     
-    fig1 = px.bar(grade_counts, x='Grade', y='Count', 
+    fig = px.bar(grade_counts, x='Grade', y='Count',
                  color='Grade', text='Count',
-                 color_discrete_sequence=px.colors.qualitative.Vivid)
-    fig1.update_layout(
-        xaxis_title='Grade', 
-        yaxis_title='Number of Students',
+                 color_discrete_sequence=px.colors.qualitative.Vivid,
+                 title="🎓 Academic Excellence Distribution - Final Grade Analysis")
+    
+    fig.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white')
+        font=dict(color='white', size=12),
+        title_font_size=22,
+        height=500,
+        showlegend=False
     )
-    st.plotly_chart(fig1, use_container_width=True)
-    
-    # Add explanatory note
-    st.info("""
-    **About this chart:** This bar chart shows the distribution of final grades (A, B, C, D, F) across the student population.
-    
-    **How to interpret:** Higher bars indicate more students achieving that particular grade. This helps identify the most common 
-    grade outcomes and overall class performance.
-    """)
+    return fig
 
-elif selected_chart == "2. Average Performance by Department":
-    st.subheader("2. Average Performance by Department")
+def create_department_performance():
     dept_avg = df.groupby('Department')['Total_Score'].mean().reset_index()
     dept_avg = dept_avg.sort_values(by='Total_Score', ascending=True)
     
-    fig2 = px.bar(dept_avg, y='Department', x='Total_Score',
-                 color='Department', text_auto='.2f',
+    fig = px.bar(dept_avg, y='Department', x='Total_Score',
+                 color='Department', text_auto='.1f',
                  orientation='h',
-                 color_discrete_sequence=px.colors.qualitative.Set2)
-    fig2.update_layout(
-        yaxis_title='Department', 
-        xaxis_title='Average Total Score',
+                 color_discrete_sequence=px.colors.qualitative.Set2,
+                 title="🏆 Departmental Performance Leaderboard - Average Scores by Faculty")
+    
+    fig.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white')
+        font=dict(color='white', size=12),
+        title_font_size=22,
+        height=500,
+        showlegend=False
     )
-    st.plotly_chart(fig2, use_container_width=True)
-    
-    # Add explanatory note
-    st.info("""
-    **About this chart:** This horizontal bar chart displays the average total score achieved by students in each academic department.
-    
-    **How to interpret:** Longer bars represent higher average scores. This visualization helps identify which departments have 
-    students with the strongest or weakest academic performance.
-    """)
+    return fig
 
-elif selected_chart == "3. Grade Distribution by Gender":
-    st.subheader("3. Grade Distribution by Gender")
-    
-    # Create two columns for the pie charts
-    col1, col2 = st.columns(2)
-    
-    # Filter data by gender
+def create_gender_grade_distribution():
     male_grades = df[df['Gender'] == 'Male']['Grade'].value_counts().reset_index()
     female_grades = df[df['Gender'] == 'Female']['Grade'].value_counts().reset_index()
     
-    # Male pie chart
+    col1, col2 = st.columns(2)
+    
     with col1:
-        st.write("Male Students")
-        fig3a = px.pie(male_grades, values='count', names='Grade',
-                     color_discrete_sequence=px.colors.qualitative.Pastel)
-        fig3a.update_traces(textposition='inside', textinfo='percent+label')
-        fig3a.update_layout(
+        st.markdown("### 👨 Male Students")
+        fig_male = px.pie(male_grades, values='count', names='Grade',
+                         color_discrete_sequence=px.colors.qualitative.Pastel)
+        fig_male.update_traces(textposition='inside', textinfo='percent+label+value')
+        fig_male.update_layout(
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white')
+            font=dict(color='white'),
+            height=400,
+            showlegend=False
         )
-        st.plotly_chart(fig3a, use_container_width=True)
+        st.plotly_chart(fig_male, use_container_width=True)
     
-    # Female pie chart
     with col2:
-        st.write("Female Students")
-        fig3b = px.pie(female_grades, values='count', names='Grade',
-                      color_discrete_sequence=px.colors.qualitative.Pastel)
-        fig3b.update_traces(textposition='inside', textinfo='percent+label')
-        fig3b.update_layout(
+        st.markdown("### 👩 Female Students")
+        fig_female = px.pie(female_grades, values='count', names='Grade',
+                           color_discrete_sequence=px.colors.qualitative.Pastel)
+        fig_female.update_traces(textposition='inside', textinfo='percent+label+value')
+        fig_female.update_layout(
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white')
+            font=dict(color='white'),
+            height=400,
+            showlegend=False
         )
-        st.plotly_chart(fig3b, use_container_width=True)
-    
-    # Add explanatory note after both pie charts
-    st.info("""
-    **About this chart:** These pie charts show the grade distribution separately for male and female students.
-    
-    **How to interpret:** Each slice represents the percentage of students achieving a specific grade within each gender group.
-    This helps identify any potential gender-based differences in academic achievement patterns.
-    """)
+        st.plotly_chart(fig_female, use_container_width=True)
 
-elif selected_chart == "4. Grade Distribution Hierarchy":
-    st.subheader("4. Grade Distribution Hierarchy")
-    
-    # Prepare data for sunburst chart - count students by department, gender and grade
+def create_sunburst_chart():
     sunburst_data = df.groupby(['Department', 'Gender', 'Grade']).size().reset_index(name='Count')
     
-    # Create sunburst chart with line separations
-    fig4 = px.sunburst(
+    fig = px.sunburst(
         sunburst_data,
         path=['Department', 'Gender', 'Grade'],
         values='Count',
-        color='Grade',
-        color_discrete_sequence=px.colors.qualitative.Bold,
-        maxdepth=2
+        color='Count',
+        color_continuous_scale='Viridis',
+        title="🎯 Academic Performance Hierarchy - Department → Gender → Grade Distribution"
     )
     
-    # Add line separations
-    fig4.update_traces(
-        marker_line_color='black',      # Black lines for contrast
-        marker_line_width=2,            # Thicker lines for better visibility
-        insidetextorientation='radial'  # Text follows the radial direction
+    fig.update_traces(
+        marker_line_color='white',
+        marker_line_width=2,
+        insidetextorientation='radial',
+        textinfo="label+value"
     )
     
-    fig4.update_layout(
-        height=700,
-        margin=dict(t=10, b=10, l=10, r=10),
+    fig.update_layout(
+        height=600,
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white')
+        font=dict(color='white', size=12),
+        title_font_size=22
     )
-    st.plotly_chart(fig4, use_container_width=True)
-    
-    # Add explanatory note
-    st.info("""
-    **About this chart:** This sunburst chart shows the hierarchical relationship between departments, gender, and grades.
-    
-    **How to interpret:** Moving from the center outward, each ring represents a different category level. The innermost ring shows departments,
-    the middle ring shows gender, and the outer ring shows grades. The size of each segment indicates the number of students in that category.
-    **Tip:** Click on segments to zoom in and explore specific branches of the hierarchy.
-    """)
+    return fig
 
-elif selected_chart == "5. Study Hours vs Total Score":
-    st.subheader("5. Study Hours vs Total Score")
-    
-    # Add grade selection widget in the sidebar
+def create_study_hours_scatter():
     available_grades = sorted(df['Grade'].unique())
     selected_grades = st.multiselect(
-        "Select grades to display:",
+        "🎯 Select grades to display:",
         options=available_grades,
         default=available_grades,
         key="grade_selector"
     )
     
-    # Filter data based on selected grades
-    if not selected_grades:  # If no grade is selected, show a message
-        st.warning("Please select at least one grade to display.")
-    else:
-        filtered_df = df[df['Grade'].isin(selected_grades)]
-        
-        # Create a bubble chart with smaller dots
-        fig5 = px.scatter(filtered_df, 
-                         x='Study_Hours_per_Week', 
-                         y='Total_Score',
-                         size='Final_Score',
-                         color='Grade',
-                         hover_name='Student_ID',
-                         size_max=15,
-                         opacity=0.7)
-        
-        fig5.update_layout(
-            xaxis_title='Study Hours per Week',
-            yaxis_title='Total Score',
-            showlegend=True,
-            height=700,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white')
-        )
-        st.plotly_chart(fig5, use_container_width=True)
-        
-        # Add explanatory note
-        st.info("""
-        **About this chart:** This scatter plot shows the relationship between weekly study hours and total academic scores.
-        
-        **How to interpret:** Each dot represents a student, with the size indicating their final score. The position shows their 
-        study hours (x-axis) and total score (y-axis). Colors represent different grades.
-        
-        **Tip:** Use the grade selector above to filter which grades are displayed.
-        """)
+    if not selected_grades:
+        st.warning("⚠️ Please select at least one grade to display.")
+        return None
+    
+    filtered_df = df[df['Grade'].isin(selected_grades)]
+    
+    # Changed to box plot to avoid NaN size issues
+    fig = px.box(filtered_df,
+                 x='Grade',
+                 y='Study_Hours_per_Week',
+                 color='Grade',
+                 points="all",
+                 title="📚 Study Hours Distribution by Grade",
+                 color_discrete_sequence=px.colors.qualitative.Set1)
+    
+    fig.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white', size=12),
+        title_font_size=22,
+        height=600,
+        xaxis_title='Grade',
+        yaxis_title='Study Hours per Week',
+        showlegend=False
+    )
+    
+    fig.update_traces(
+        marker=dict(size=8, opacity=0.7),
+        boxpoints='all',
+        jitter=0.3,
+        pointpos=-1.8
+    )
+    
+    return fig
 
-elif selected_chart == "6. Attendance Impact on Final Score":
-    st.subheader("6. Attendance Impact on Final Score")
-    
-    # Calculate the lowest non-zero attendance value
+def create_attendance_impact():
     min_attendance = df['Attendance (%)'].replace(0, np.nan).min()
+    att_bins = [50, 60, 70, 75, 80, 85, 90, 95, 100] if min_attendance >= 50 else [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     
-    # Create optimized bins focusing on where data exists
-    if min_attendance < 50:
-        # If there's data below 50%, create bins with smaller steps for lower ranges
-        att_bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-    else:
-        # If no data below 50%, focus bins on the 50-100% range
-        att_bins = [50, 60, 70, 75, 80, 85, 90, 95, 100]
+    df['Attendance_Bin'] = pd.cut(df['Attendance (%)'], bins=att_bins, include_lowest=True)
     
-    # Group by attendance bins
-    df['Attendance_Bin'] = pd.cut(df['Attendance (%)'], 
-                                 bins=att_bins,
-                                 include_lowest=True)
-    
-    # Get average final score per bin
     att_avg = df.groupby('Attendance_Bin')['Final_Score'].mean().reset_index()
-    att_avg['Attendance_Mid'] = [(interval.left + interval.right)/2 for interval in att_avg['Attendance_Bin']]
+    att_avg['Attendance_Mid'] = [(interval.left + interval.right) / 2 for interval in att_avg['Attendance_Bin']]
     att_avg = att_avg.sort_values('Attendance_Mid')
     
-    # Count students in each bin
     att_count = df.groupby('Attendance_Bin').size().reset_index(name='Count')
-    att_count['Attendance_Mid'] = [(interval.left + interval.right)/2 for interval in att_count['Attendance_Bin']]
+    att_count['Attendance_Mid'] = [(interval.left + interval.right) / 2 for interval in att_count['Attendance_Bin']]
     
-    # Merge datasets
     att_data = pd.merge(att_avg, att_count, on=['Attendance_Bin', 'Attendance_Mid'])
     
-    # Create figure
-    fig6 = go.Figure()
+    fig = go.Figure()
     
-    # Add line for average score
-    fig6.add_trace(go.Scatter(
+    fig.add_trace(go.Scatter(
         x=att_data['Attendance_Mid'],
         y=att_data['Final_Score'],
-        mode='lines+markers',
-        name='Avg Final Score',
-        line=dict(width=3, color='#00ffaa'),
-        marker=dict(
-            size=10, 
-            color='#00ffaa',
-            line=dict(width=2, color='darkgreen')
-        )
+        mode='lines+markers+text',
+        name='Average Final Score',
+        line=dict(width=4, color='#00ffaa'),
+        marker=dict(size=12, color='#00ffaa', line=dict(width=2, color='darkgreen')),
+        text=[f'Score: {score:.1f}<br>Students: {count}' for score, count in zip(att_data['Final_Score'], att_data['Count'])],
+        textposition='top center',
+        textfont=dict(color='white', size=10)
     ))
     
-    # Add information about student count as hover text
-    hover_text = [f"Attendance: {x:.1f}%<br>Students: {y}" 
-                 for x, y in zip(att_data['Attendance_Mid'], att_data['Count'])]
-    
-    # Add markers showing student counts
-    fig6.add_trace(go.Scatter(
-        x=att_data['Attendance_Mid'],
-        y=att_data['Final_Score'],
-        mode='markers',
-        marker=dict(
-            size=att_data['Count'].apply(lambda x: min(max(x*2, 5), 25)),
-            color='rgba(0, 255, 170, 0.3)',
-            line=dict(width=1, color='#00ffaa')
-        ),
-        name='Student Count',
-        text=hover_text,
-        hoverinfo='text'
-    ))
-    
-    fig6.update_layout(
-        xaxis=dict(
-            title='Attendance (%)',
-            tickmode='array',
-            tickvals=att_data['Attendance_Mid'],
-            ticktext=[f"{int(x.left)}-{int(x.right)}%" for x in att_data['Attendance_Bin']]
-        ),
+    fig.update_layout(
+        title="📅 Attendance Success Correlation - Class Presence vs Final Performance",
+        xaxis_title='Attendance (%)',
         yaxis_title='Average Final Score',
-        hovermode='closest',
-        height=700,
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white')
+        font=dict(color='white', size=12),
+        title_font_size=22,
+        height=500,
+        showlegend=False
     )
-    st.plotly_chart(fig6, use_container_width=True)
-    
-    # Add explanatory note
-    st.info("""
-    **About this chart:** This line chart shows the relationship between class attendance rates and final exam scores.
-    
-    **How to interpret:** The line shows average final scores at different attendance levels. The size of each dot indicates 
-    the number of students in that attendance range. Generally, a rising trend suggests that higher attendance correlates with 
-    better final scores.
-    """)
+    return fig
 
-elif selected_chart == "7. Distribution of Score Components":
-    st.subheader("7. Distribution of Score Components")
-    score_cols = ['Midterm_Score', 'Final_Score', 'Assignments_Avg', 
-                  'Quizzes_Avg', 'Projects_Score']
+def create_score_distribution():
+    score_cols = ['Midterm_Score', 'Final_Score', 'Assignments_Avg', 'Quizzes_Avg', 'Projects_Score']
     
-    # Prepare data for violin plot
-    score_df = pd.melt(df[score_cols], 
-                       value_vars=score_cols,
-                       var_name='Assessment Type', 
-                       value_name='Score')
+    fig = go.Figure()
     
-    fig7 = px.violin(score_df, x='Assessment Type', y='Score',
-                    box=True,
-                    points='all',
-                    color='Assessment Type',
-                    color_discrete_sequence=px.colors.qualitative.Vivid)
-    fig7.update_layout(
-        xaxis_title='Assessment Type', 
+    for i, col in enumerate(score_cols):
+        data = df[col].dropna()
+        
+        fig.add_trace(go.Violin(
+            y=data,
+            name=col.replace('_', ' '),
+            box_visible=True,
+            meanline_visible=True,
+            fillcolor=px.colors.qualitative.Vivid[i % len(px.colors.qualitative.Vivid)],
+            opacity=0.7,
+            x0=col.replace('_', ' ')
+        ))
+    
+    fig.update_layout(
+        title="📊 Assessment Performance Breakdown - Score Distribution (Violin Plot)",
+        xaxis_title='Assessment Type',
         yaxis_title='Score',
-        showlegend=False,
-        height=700,  # Increased height
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white')
+        font=dict(color='white', size=12),
+        title_font_size=22,
+        height=600,
+        showlegend=False
     )
-    st.plotly_chart(fig7, use_container_width=True)
     
-    # Add explanatory note
-    st.info("""
-    **About this chart:** This violin plot shows the distribution of scores across different assessment types.
-    
-    **How to interpret:** The width of each "violin" shows the density of scores at that value. Wider sections indicate more students 
-    received that score. The boxplot inside shows the median (middle line), interquartile range (box), and outliers (points beyond the whiskers).
-    This helps compare the score patterns across different assignments and exams.
-    """)
+    return fig
 
-elif selected_chart == "8. Internet Access Impact on Performance":
-    st.subheader("8. Internet Access Impact on Performance")
-    
-    # Calculate grade distribution by internet access
+def create_internet_impact():
     internet_grade = df.pivot_table(
         index='Internet_Access_at_Home',
         columns='Grade',
@@ -411,182 +441,360 @@ elif selected_chart == "8. Internet Access Impact on Performance":
         fill_value=0
     ).reset_index()
     
-    # Convert to percentages for better comparison
     grade_cols = [col for col in internet_grade.columns if col != 'Internet_Access_at_Home']
     for i, row in internet_grade.iterrows():
         total = sum(row[grade_cols])
         for col in grade_cols:
             internet_grade.loc[i, col] = (row[col] / total) * 100
     
-    # Create stacked bar chart
-    fig8 = go.Figure()
+    fig = go.Figure()
+    colors = px.colors.qualitative.Set2
     
-    for grade in ['A', 'B', 'C', 'D', 'F']:
+    for i, grade in enumerate(['A', 'B', 'C', 'D', 'F']):
         if grade in internet_grade.columns:
-            fig8.add_trace(go.Bar(
+            fig.add_trace(go.Bar(
                 x=internet_grade['Internet_Access_at_Home'],
                 y=internet_grade[grade],
                 name=f'Grade {grade}',
                 text=internet_grade[grade].round(1).astype(str) + '%',
-                textposition='inside'
+                textposition='inside',
+                marker_color=colors[i % len(colors)]
             ))
     
-    fig8.update_layout(
+    fig.update_layout(
         barmode='stack',
+        title="🌐 Digital Divide Impact - Internet Access vs Academic Achievement",
         xaxis_title='Internet Access at Home',
         yaxis_title='Percentage of Students (%)',
-        legend_title='Grade',
-        hovermode='x',
-        height=700,  # Increased height
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white')
+        font=dict(color='white', size=12),
+        title_font_size=22,
+        height=600
     )
-    
-    st.plotly_chart(fig8, use_container_width=True)
-    
-    # Add explanatory note
-    st.info("""
-    **About this chart:** This stacked bar chart shows the percentage distribution of grades for students with and without internet access at home.
-    
-    **How to interpret:** Each bar segment represents the percentage of students achieving a specific grade. The full height of each bar is 100%.
-    This visualization helps assess whether internet access at home influences academic performance.
-    """)
+    return fig
 
-elif selected_chart == "9. Stress Level vs Performance":
-    st.subheader("9. Stress Level vs Performance")
-    
-    # Create a pivot table for stress level vs grade
+def create_stress_heatmap():
     stress_grade = df.groupby(['Stress_Level (1-10)', 'Grade']).size().reset_index(name='Count')
     stress_grade['Stress_Level (1-10)'] = stress_grade['Stress_Level (1-10)'].round().astype(int)
     stress_pivot = stress_grade.pivot_table(
-        index='Stress_Level (1-10)', 
-        columns='Grade', 
+        index='Stress_Level (1-10)',
+        columns='Grade',
         values='Count',
         aggfunc='sum',
         fill_value=0
     )
     
-    # Create heatmap
-    fig9 = px.imshow(
+    fig = px.imshow(
         stress_pivot,
-        labels=dict(x="Grade", y="Stress Level (1-10)", color="Number of Students"),
+        labels=dict(x="Grade", y="Stress Level (1-10)", color="Students"),
         x=stress_pivot.columns,
         y=stress_pivot.index,
-        color_continuous_scale='Viridis'  # Better for dark backgrounds
+        color_continuous_scale='Blues',
+        title="😰 Student Stress vs Academic Performance - Correlation Analysis"
     )
     
-    fig9.update_layout(
-        xaxis_title='Grade',
-        yaxis_title='Stress Level (1-10)',
-        height=700,  # Increased height
+    fig.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white')
+        font=dict(color='white', size=12),
+        title_font_size=22,
+        height=500,
+        coloraxis_colorbar=dict(
+            title="Number of Students",
+            title_font=dict(color='white'),
+            tickfont=dict(color='white'),
+            bgcolor='rgba(255,255,255,0.1)',
+            bordercolor='white',
+            borderwidth=1
+        )
     )
-    st.plotly_chart(fig9, use_container_width=True)
-    
-    # Add explanatory note
-    st.info("""
-    **About this chart:** This heatmap displays the relationship between student stress levels and their final grades.
-    
-    **How to interpret:** Each cell shows how many students with a particular stress level (y-axis) achieved a specific grade (x-axis).
-    Darker colors indicate a higher number of students. This visualization helps identify whether certain stress levels are associated with 
-    better or worse academic performance.
-    """)
+    return fig
 
-elif selected_chart == "10. Parent Education & Student Performance":
-    st.subheader("10. Parent Education & Student Performance")
+def create_sleep_analysis():
+    sleep_bins = [0, 4, 5, 6, 7, 8, 9, 12]
+    sleep_labels = ['<4h', '4-5h', '5-6h', '6-7h', '7-8h', '8-9h', '9h+']
     
-    # Fill missing values
-    df['Parent_Education_Level'] = df['Parent_Education_Level'].fillna('Not Reported')
+    df['Sleep_Group'] = pd.cut(df['Sleep_Hours_per_Night'], 
+                              bins=sleep_bins, 
+                              labels=sleep_labels,
+                              include_lowest=True)
     
-    # Calculate average score by parent education level
-    edu_avg = df.groupby('Parent_Education_Level')['Total_Score'].mean().reset_index()
+    sleep_stats = df.groupby('Sleep_Group').agg({
+        'Total_Score': 'mean',
+        'Stress_Level (1-10)': 'mean',
+        'Grade': lambda x: (x == 'A').mean() * 100
+    }).reset_index()
     
-    # Calculate percentage of A and B grades by parent education level
-    top_grades = df.groupby('Parent_Education_Level')['Grade'].apply(
-        lambda x: (x.isin(['A', 'B']).sum() / len(x)) * 100
-    ).reset_index(name='Top_Grade_Percentage')
+    sleep_stats.columns = ['Sleep_Hours', 'Avg_Score', 'Avg_Stress', 'A_Grade_Percentage']
+    sleep_counts = df.groupby('Sleep_Group').size().reset_index(name='Count')
+    sleep_stats = pd.merge(sleep_stats, sleep_counts, left_on='Sleep_Hours', right_on='Sleep_Group')
+    sleep_stats.drop('Sleep_Group', axis=1, inplace=True)
     
-    # Merge the datasets
-    edu_data = pd.merge(edu_avg, top_grades, on='Parent_Education_Level')
+    fig = go.Figure()
     
-    # Sort by average score for better visualization
-    edu_data = edu_data.sort_values(by='Total_Score', ascending=False)
-    
-    # Create combined chart with darker colors for better visibility
-    fig10 = go.Figure()
-    
-    # Add bar chart for average scores
-    fig10.add_trace(go.Bar(
-        x=edu_data['Parent_Education_Level'],
-        y=edu_data['Total_Score'],
-        name='Avg Total Score',
-        marker_color='#0088ff',  # Blue for bars
-        text=edu_data['Total_Score'].round(1),
-        textposition='auto',
-        textfont=dict(color='white')
+    fig.add_trace(go.Bar(
+        x=sleep_stats['Sleep_Hours'],
+        y=sleep_stats['Avg_Score'],
+        name='Average Score',
+        marker_color='#4287f5',
+        opacity=0.8,
+        text=sleep_stats['Avg_Score'].round(1),
+        textposition='auto'
     ))
     
-    # Add line chart for percentage of top grades
-    fig10.add_trace(go.Scatter(
-        x=edu_data['Parent_Education_Level'],
-        y=edu_data['Top_Grade_Percentage'],
-        name='A/B Grade %',
+    fig.add_trace(go.Scatter(
+        x=sleep_stats['Sleep_Hours'],
+        y=sleep_stats['A_Grade_Percentage'],
         mode='lines+markers',
-        line=dict(color='#ff5500', width=3),  # Orange for line
-        marker=dict(size=12, color='#ff5500'),
-        yaxis='y2'
+        name='% A Grades',
+        yaxis='y2',
+        line=dict(color='#ff9500', width=3),
+        marker=dict(size=10, color='#ff9500')
     ))
     
-    # Set up layout with dual y-axes with different colors for titles
-    fig10.update_layout(
-        xaxis=dict(
-            title='Parent Education Level',
-            tickangle=-30
-        ),
+    fig.update_layout(
+        title="😴 Sleep Quality Impact - Rest Duration vs Academic Excellence",
+        xaxis_title='Sleep Hours per Night',
         yaxis=dict(
-            title='Average Total Score',
-            titlefont=dict(color='#ffaa66'),  # Lighter orange for title, different from the graph
-            tickfont=dict(color='#ffaa66'),
+            title='Average Score',
+            title_font=dict(color='#4287f5'),
+            tickfont=dict(color='#4287f5')
         ),
         yaxis2=dict(
-            title='Students with A/B Grades (%)',
-            titlefont=dict(color='#ffaa66'),  # Lighter orange for title, different from the graph
-            tickfont=dict(color='#ffaa66'),
-            anchor='x',
+            title='% A Grades',
             overlaying='y',
             side='right',
-            range=[0, 100]
+            title_font=dict(color='#ff9500'),
+            tickfont=dict(color='#ff9500')
         ),
-        legend=dict(
-            orientation='h',
-            yanchor='bottom',
-            y=1.02,
-            xanchor='right',
-            x=1,
-            font=dict(color='white')
-        ),
-        height=700,  # Increased height
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white')
+        font=dict(color='white', size=12),
+        title_font_size=22,
+        height=600
+    )
+    return fig
+
+def create_parent_education_impact():
+    clean_df = df.dropna(subset=['Parent_Education_Level'])
+    clean_df = clean_df[clean_df['Parent_Education_Level'].str.strip() != '']
+    
+    if clean_df.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No valid Parent Education data available",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, xanchor='center', yanchor='middle',
+            showarrow=False,
+            font=dict(size=20, color="white")
+        )
+        fig.update_layout(
+            title="🎓 Parent Education Impact - Family Background vs Academic Success",
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white', size=12),
+            height=500
+        )
+        return fig
+    
+    parent_ed_data = clean_df.groupby('Parent_Education_Level').agg({
+        'Total_Score': 'mean',
+        'Grade': lambda x: (x == 'A').mean() * 100
+    }).reset_index()
+    
+    parent_ed_data.columns = ['Parent_Education', 'Avg_Score', 'A_Grade_Pct']
+    
+    counts = clean_df.groupby('Parent_Education_Level').size().reset_index(name='Student_Count')
+    parent_ed_data = pd.merge(parent_ed_data, counts, left_on='Parent_Education', right_on='Parent_Education_Level')
+    parent_ed_data = parent_ed_data.drop('Parent_Education_Level', axis=1)
+    
+    parent_ed_data = parent_ed_data.sort_values('Avg_Score', ascending=True)
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(
+        x=parent_ed_data['Parent_Education'],
+        y=parent_ed_data['Avg_Score'],
+        name='Average Score',
+        marker_color='#4ecdc4',
+        opacity=0.8,
+        text=[f'{score:.1f}' for score in parent_ed_data['Avg_Score']],
+        textposition='auto',
+        textfont=dict(color='white', size=12, family='Arial Black')
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=parent_ed_data['Parent_Education'],
+        y=parent_ed_data['A_Grade_Pct'],
+        mode='lines+markers+text',
+        name='% A Grades',
+        yaxis='y2',
+        line=dict(color='#ff6b6b', width=4),
+        marker=dict(size=12, color='#ff6b6b', line=dict(width=2, color='white')),
+        text=[f'{pct:.1f}%' for pct in parent_ed_data['A_Grade_Pct']],
+        textposition='top center',
+        textfont=dict(color='white', size=11, family='Arial Black')
+    ))
+    
+    fig.update_layout(
+        title="🎓 Parent Education Impact - Academic Performance by Family Background",
+        xaxis_title='Parent Education Level',
+        yaxis=dict(
+            title='Average Score',
+            title_font=dict(color='#4ecdc4', size=14),
+            tickfont=dict(color='#4ecdc4', size=12),
+            range=[0, 100]
+        ),
+        yaxis2=dict(
+            title='Percentage of A Grades',
+            overlaying='y',
+            side='right',
+            title_font=dict(color='#ff6b6b', size=14),
+            tickfont=dict(color='#ff6b6b', size=12),
+            range=[0, max(parent_ed_data['A_Grade_Pct']) + 10]
+        ),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white', size=12),
+        title_font_size=22,
+        height=500,
+        showlegend=True,
+        legend=dict(
+            x=0.02,
+            y=0.98,
+            bgcolor='rgba(255,255,255,0.1)',
+            bordercolor='white',
+            borderwidth=1,
+            font=dict(size=12)
+        ),
+        margin=dict(l=60, r=60, t=80, b=60)
     )
     
-    st.plotly_chart(fig10, use_container_width=True)
-    
-    # Add explanatory note
-    st.info("""
-    **About this chart:** This combined chart shows the relationship between parent education level and student performance.
-    
-    **How to interpret:** 
-    - Blue bars (left axis): Average total score for students with each parent education level
-    - Orange line (right axis): Percentage of students achieving A or B grades for each parent education level
-    
-    This visualization helps assess whether parent education background influences student academic achievement.
-    """)
+    return fig
 
-# Footer
+df = load_data()
+
+st.markdown("""
+<div class="main-header">
+    <h1>🎓 Student Academic Performance Dashboard</h1>
+    <p>Comprehensive analysis of student performance metrics and factors</p>
+</div>
+""", unsafe_allow_html=True)
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.markdown("""
+    <div class="metric-card">
+        <h3>📊 Total Students</h3>
+        <h2>{}</h2>
+    </div>
+    """.format(len(df)), unsafe_allow_html=True)
+
+with col2:
+    avg_score = df['Total_Score'].mean()
+    st.markdown("""
+    <div class="metric-card">
+        <h3>🎯 Average Score</h3>
+        <h2>{:.1f}</h2>
+    </div>
+    """.format(avg_score), unsafe_allow_html=True)
+
+with col3:
+    top_grade_pct = (df['Grade'] == 'A').mean() * 100
+    st.markdown("""
+    <div class="metric-card">
+        <h3>🏆 A Grade Rate</h3>
+        <h2>{:.1f}%</h2>
+    </div>
+    """.format(top_grade_pct), unsafe_allow_html=True)
+
+with col4:
+    avg_attendance = df['Attendance (%)'].mean()
+    st.markdown("""
+    <div class="metric-card">
+        <h3>📅 Avg Attendance</h3>
+        <h2>{:.1f}%</h3>
+    </div>
+    """.format(avg_attendance), unsafe_allow_html=True)
+
+st.markdown("### 👥 Research Team")
+team_members = [
+    "Mai Vũ Như Quỳnh", "Lê Ngọc Khánh", "Võ Thị Tuyết Mai",
+    "Phạm Nguyễn Tường Lam", "Ngô Quỳnh Anh", "Lưu Minh Đăng"
+]
+
+st.markdown('<div class="team-grid">', unsafe_allow_html=True)
+cols = st.columns(3)
+for i, member in enumerate(team_members):
+    with cols[i % 3]:
+        st.markdown(f"""
+        <div class="team-member" style="margin-bottom: 1.5rem;">
+            {member}
+        </div>
+        """, unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
+with st.expander("📋 View Dataset", expanded=False):
+    st.dataframe(df, use_container_width=True)
+
+chart_options = [
+    "📊 Grade Distribution", "🏢 Department Performance", "👫 Gender Analysis",
+    "🎯 Performance Hierarchy", "🎓 Parent Education Impact", "📅 Attendance Impact",
+    "📈 Score Components", "🌐 Internet Access Effect", "😰 Stress Analysis", "😴 Sleep Impact"
+]
+
+selected_chart = st.sidebar.radio("Select Analysis:", chart_options)
+
+st.markdown('<div class="chart-container">', unsafe_allow_html=True)
+
+if selected_chart == "📊 Grade Distribution":
+    st.plotly_chart(create_grade_distribution(), use_container_width=True)
+    st.info("📌 **Insight:** This visualization shows the distribution of final grades across all students, helping identify overall class performance patterns.")
+
+elif selected_chart == "🏢 Department Performance":
+    st.plotly_chart(create_department_performance(), use_container_width=True)
+    st.info("📌 **Insight:** Compare average performance across different academic departments to identify strengths and areas for improvement.")
+
+elif selected_chart == "👫 Gender Analysis":
+    create_gender_grade_distribution()
+    st.info("📌 **Insight:** Analyze grade distribution patterns between male and female students to identify any gender-based performance differences.")
+
+elif selected_chart == "🎯 Performance Hierarchy":
+    st.plotly_chart(create_sunburst_chart(), use_container_width=True)
+    st.info("📌 **Insight:** Interactive hierarchy showing the relationship between departments, gender, and grades. Click segments to explore specific branches.")
+
+elif selected_chart == "🎓 Parent Education Impact":
+    st.plotly_chart(create_parent_education_impact(), use_container_width=True)
+    st.info("📌 **Insight:** Explore how parental education levels affect student performance, A-grade rates, and study habits, revealing the impact of family educational background on academic success.")
+
+elif selected_chart == "📅 Attendance Impact":
+    st.plotly_chart(create_attendance_impact(), use_container_width=True)
+    st.info("📌 **Insight:** Demonstrates how class attendance correlates with final exam performance, supporting the importance of regular attendance.")
+
+elif selected_chart == "📈 Score Components":
+    st.plotly_chart(create_score_distribution(), use_container_width=True)
+    st.info("📌 **Insight:** Compare score distributions across different assessment types to understand performance patterns in various evaluation methods.")
+
+elif selected_chart == "🌐 Internet Access Effect":
+    st.plotly_chart(create_internet_impact(), use_container_width=True)
+    st.info("📌 **Insight:** Analyze how home internet access affects academic performance, highlighting digital divide impacts on education.")
+
+elif selected_chart == "😰 Stress Analysis":
+    st.plotly_chart(create_stress_heatmap(), use_container_width=True)
+    st.info("📌 **Insight:** Heatmap showing the relationship between student stress levels and academic grades, helping identify optimal stress ranges.")
+
+elif selected_chart == "😴 Sleep Impact":
+    st.plotly_chart(create_sleep_analysis(), use_container_width=True)
+    st.info("📌 **Insight:** Examine how sleep duration affects academic performance and A-grade achievement rates, supporting healthy sleep habits.")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
 st.markdown("---")
-st.caption("Student Performance Analysis Dashboard | Created with Streamlit")
+st.markdown("""
+<div style='text-align: center; padding: 1rem; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); border-radius: 10px; margin-top: 2rem;'>
+    <h4>🎓 Student Performance Analytics Dashboard</h4>
+    <p>Powered by Streamlit • Data-driven Educational Insights</p>
+</div>
+""", unsafe_allow_html=True)
