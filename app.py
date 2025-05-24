@@ -3,6 +3,8 @@ import numpy as np
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from tenacity import _unset
 
 st.set_page_config(
     page_title="🎓 Student Performance Analytics",
@@ -12,95 +14,206 @@ st.set_page_config(
 )
 
 st.markdown("""
+<script>
+function detectAndApplyTheme() {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const root = document.documentElement;
+    
+    if (prefersDark) {
+        root.setAttribute('data-theme', 'dark');
+        root.style.setProperty('--detected-theme', 'dark');
+    } else {
+        root.setAttribute('data-theme', 'light');
+        root.style.setProperty('--detected-theme', 'light');
+    }
+    
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (e.matches) {
+            root.setAttribute('data-theme', 'dark');
+            root.style.setProperty('--detected-theme', 'dark');
+        } else {
+            root.setAttribute('data-theme', 'light');
+            root.style.setProperty('--detected-theme', 'light');
+        }
+    });
+}
+
+detectAndApplyTheme();
+document.addEventListener('DOMContentLoaded', detectAndApplyTheme);
+</script>
+""", unsafe_allow_html=True)
+
+st.markdown("""
 <style>
+    :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f8f9fa;
+        --bg-card: #ffffff;
+        --text-primary: #212529;
+        --text-secondary: #6c757d;
+        --accent-primary: #4285f4;
+        --accent-secondary: #34a853;
+        --border-color: #dee2e6;
+        --shadow-color: rgba(0, 0, 0, 0.1);
+        --gradient-start: #4285f4;
+        --gradient-end: #34a853;
+        --sidebar-bg: linear-gradient(180deg, #f5f7fa 0%, #c3cfe2 100%);
+        --success-color: #28a745;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --info-color: #17a2b8;
+        --metric-shadow: 0 4px 12px rgba(66, 133, 244, 0.2);
+    }
+    
+    [data-theme="dark"], 
+    :root[data-theme="dark"] {
+        --bg-primary: #0e1117;
+        --bg-secondary: #1a1a1a;
+        --bg-card: rgba(255, 255, 255, 0.05);
+        --text-primary: #ffffff;
+        --text-secondary: #b0b0b0;
+        --accent-primary: #667eea;
+        --accent-secondary: #764ba2;
+        --border-color: rgba(255, 255, 255, 0.1);
+        --shadow-color: rgba(0, 0, 0, 0.4);
+        --gradient-start: #667eea;
+        --gradient-end: #764ba2;
+        --sidebar-bg: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+        --success-color: #20c997;
+        --warning-color: #fd7e14;
+        --danger-color: #e74c3c;
+        --info-color: #6f42c1;
+        --metric-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme]) {
+            --bg-primary: #0e1117;
+            --bg-secondary: #1a1a1a;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+            --sidebar-bg: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            --success-color: #20c997;
+            --warning-color: #fd7e14;
+            --danger-color: #e74c3c;
+            --info-color: #6f42c1;
+            --metric-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+    }
+    
+    .stApp {
+        background-color: var(--bg-primary) !important;
+        color: var(--text-primary) !important;
+        transition: all 0.3s ease;
+    }
+    
+    .main {
+        background-color: var(--bg-primary) !important;
+    }
+    
+    .main .block-container {
+        background-color: var(--bg-primary) !important;
+        padding: 2rem !important;
+    }
+    
+    [data-testid="stAppViewContainer"] {
+        background-color: var(--bg-primary) !important;
+    }
+    
+    [data-testid="stAppViewContainer"] > .main {
+        background-color: var(--bg-primary) !important;
+    }
+    
+    [data-testid="stAppViewContainer"] .main .block-container {
+        background-color: var(--bg-primary) !important;
+    }
+    
     .main-header {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(90deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
         padding: 2rem;
-        border-radius: 10px;
+        border-radius: 15px;
         margin-bottom: 2rem;
         text-align: center;
+        color: white;
+        box-shadow: var(--metric-shadow);
     }
+    
     .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 0.5rem 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .chart-container {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .stPlotlyChart {
-        background: transparent !important;
-    }
-    .team-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
-        padding: 0 1rem;
-    }
-    .team-member {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
         padding: 1.5rem;
         border-radius: 12px;
-        text-align: center;
+        margin: 0.5rem 0;
+        box-shadow: var(--metric-shadow);
         color: white;
-        font-weight: 500;
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .team-member:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
-    }
-    .sidebar .stRadio > label {
-        font-size: 14px;
-        font-weight: 500;
-    }
-    .stInfo {
-        background: rgba(102, 126, 234, 0.1);
-        border-left: 4px solid #667eea;
+        transition: transform 0.3s ease;
     }
     
-    /* Enhanced Sidebar Styling */
-    .css-1d391kg {
-        background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%) !important;
-        border-right: 3px solid #667eea !important;
+    .metric-card:hover {
+        transform: translateY(-3px);
     }
     
-    .stSidebar > div:first-child {
-        background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-        border-right: 3px solid #667eea;
+    .chart-container {
+        background: var(--bg-card);
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 6px var(--shadow-color);
+    }
+    
+    .stSelectbox > div > div {
+        background-color: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+    
+    .stMultiSelect > div > div {
+        background-color: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+    
+    .stTextInput > div > div > input {
+        background-color: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+    
+    .css-1d391kg, .stSidebar > div:first-child {
+        background: var(--sidebar-bg) !important;
+        border-right: 3px solid var(--accent-primary) !important;
     }
     
     .stSidebar .stMarkdown h2 {
-        color: #ffffff !important;
+        color: var(--text-primary) !important;
         font-size: 1.5rem !important;
         font-weight: 700 !important;
         text-align: center !important;
         padding: 1rem 0 !important;
         margin-bottom: 1.5rem !important;
-        border-bottom: 2px solid #667eea !important;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+        border-bottom: 2px solid var(--accent-primary) !important;
+        text-shadow: 0 2px 4px var(--shadow-color) !important;
     }
     
     .stSidebar .stRadio > div {
-        background: rgba(255, 255, 255, 0.05) !important;
+        background: var(--bg-card) !important;
         border-radius: 10px !important;
         padding: 1rem !important;
         margin: 0.5rem 0 !important;
-        border: 1px solid rgba(255, 255, 255, .1) !important;
+        border: 1px solid var(--border-color) !important;
+        backdrop-filter: blur(10px);
     }
     
     .stSidebar .stRadio > div > label {
-        color: #ffffff !important;
+        color: var(--text-primary) !important;
         font-weight: 500 !important;
         font-size: 14px !important;
         display: flex !important;
@@ -108,96 +221,102 @@ st.markdown("""
         padding: 0.75rem !important;
         margin: 0.3rem 0 !important;
         border-radius: 8px !important;
-        transition: all 0.3s ease !important;
+        transition: all 0.2s ease !important;
         cursor: pointer !important;
-        background: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid transparent !important;
     }
     
     .stSidebar .stRadio > div > label:hover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        background: rgba(102, 126, 234, 0.1) !important;
         transform: translateX(5px) !important;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
     }
     
-    .stSidebar .stRadio > div > label[data-checked="true"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
-        transform: translateX(8px) !important;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
-        font-weight: 600 !important;
+    .team-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+        padding: 0 1rem;
     }
     
-    .stSidebar .stRadio input[type="radio"] {
-        accent-color: #667eea !important;
-        margin-right: 0.75rem !important;
-        transform: scale(1.2) !important;
-    }
-    
-    .main-header {
-        font-size: 3rem;
-        font-weight: bold;
-        text-align: center;
-        background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 2rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    
-    .metric-container {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 0.5rem 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    .stMetric {
-        background: transparent;
-    }
-    
-    .plot-container {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 1rem;
+    .team-member {
+        background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+        padding: 1.5rem;
         border-radius: 15px;
-        margin: 1rem 0;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+        color: white;
+        font-weight: 500;
+        box-shadow: var(--metric-shadow);
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
     }
     
-    /* Remove duplicate sidebar styling */
-    .css-1d391kg {
-        display: none;
+    .team-member:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 35px var(--shadow-color);
     }
     
-    /* Ensure single sidebar */
-    section[data-testid="stSidebar"] > div:first-child {
-        background: linear-gradient(180deg, #2C3E50 0%, #3498DB 100%);
-        border-radius: 0 15px 15px 0;
+    .stInfo {
+        background: rgba(66, 133, 244, 0.1) !important;
+        border-left: 4px solid var(--accent-primary) !important;
+        color: var(--text-primary) !important;
+        border-radius: 8px !important;
     }
     
-    /* Hide duplicate navigation elements */
-    .css-17lntkn, .css-pkbazv {
-        display: none !important;
+    .stSuccess {
+        background: rgba(40, 167, 69, 0.1) !important;
+        border-left: 4px solid var(--success-color) !important;
+        color: var(--text-primary) !important;
     }
     
-    /* Main content area styling */
-    .block-container {
-        padding-top: 2rem;
-        max-width: 100%;
+    .stWarning {
+        background: rgba(255, 193, 7, 0.1) !important;
+        border-left: 4px solid var(--warning-color) !important;
+        color: var(--text-primary) !important;
     }
     
-    /* Sidebar navigation styling */
-    .css-1lcbmhc .css-1outpf7 {
-        background-color: transparent;
+    .stError {
+        background: rgba(220, 53, 69, 0.1) !important;
+        border-left: 4px solid var(--danger-color) !important;
+        color: var(--text-primary) !important;
     }
     
-    /* Remove extra navigation elements */
-    [data-testid="stSidebar"] .css-17lntkn {
-        display: none;
+    .stPlotlyChart {
+        background: transparent !important;
+    }
+    
+    .js-plotly-plot {
+        background: transparent !important;
+    }
+    
+    .stDataFrame {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+    }
+    
+    [data-testid="metric-container"] {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        padding: 1rem !important;
+        border-radius: 10px !important;
+        box-shadow: 0 2px 4px var(--shadow-color) !important;
+    }
+    
+    [data-testid="metric-container"] > div {
+        color: var(--text-primary) !important;
+    }
+    
+    .stButton > button {
+        background: linear-gradient(90deg, var(--gradient-start) 0%, var(--gradient-end) 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: var(--metric-shadow) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -287,32 +406,66 @@ def create_gender_grade_distribution():
         )
         st.plotly_chart(fig_female, use_container_width=True)
 
-def create_sunburst_chart():
-    sunburst_data = df.groupby(['Department', 'Gender', 'Grade']).size().reset_index(name='Count')
+def create_performance_hierarchy():
+    grade_counts = df['Grade'].value_counts()
+    dept_grade_counts = df.groupby(['Department', 'Grade']).size().reset_index(name='count')
     
-    fig = px.sunburst(
-        sunburst_data,
-        path=['Department', 'Gender', 'Grade'],
-        values='Count',
-        color='Count',
-        color_continuous_scale='Viridis',
-        title="🎯 Academic Performance Hierarchy - Department → Gender → Grade Distribution"
-    )
+    labels = ['All Students'] + list(df['Department'].unique()) + \
+             [f"{dept}-{grade}" for dept in df['Department'].unique() for grade in ['A', 'B', 'C', 'D', 'F'] if len(df[(df['Department']==dept) & (df['Grade']==grade)]) > 0]
     
-    fig.update_traces(
-        marker_line_color='white',
-        marker_line_width=2,
-        insidetextorientation='radial',
-        textinfo="label+value"
-    )
+    parents = [''] + ['All Students'] * len(df['Department'].unique()) + \
+              [dept for dept in df['Department'].unique() for grade in ['A', 'B', 'C', 'D', 'F'] if len(df[(df['Department']==dept) & (df['Grade']==grade)]) > 0]
+    
+    values = [len(df)] + [len(df[df['Department']==dept]) for dept in df['Department'].unique()] + \
+             [len(df[(df['Department']==dept) & (df['Grade']==grade)]) for dept in df['Department'].unique() for grade in ['A', 'B', 'C', 'D', 'F'] if len(df[(df['Department']==dept) & (df['Grade']==grade)]) > 0]
+    
+    colors = ['#2E3440',
+              '#5E81AC', '#88C0D0', '#81A1C1', '#8FBCBB', '#A3BE8C',
+              '#BF616A', '#D08770', '#EBCB8B', '#A3BE8C', '#B48EAD',
+              '#5E81AC', '#88C0D0', '#81A1C1', '#8FBCBB', '#A3BE8C',
+              '#BF616A', '#D08770', '#EBCB8B', '#A3BE8C', '#B48EAD']
+    
+    text_labels = []
+    for i, (label, value) in enumerate(zip(labels, values)):
+        if ('-' in label):
+            dept, grade = label.split('-')
+            percentage = (value / len(df[df['Department']==dept])) * 100
+            text_labels.append(f"{grade}<br>{value} students<br>({percentage:.1f}%)")
+        elif (label != 'All Students' and label in df['Department'].unique()):
+            percentage = (value / len(df)) * 100
+            text_labels.append(f"{label}<br>{value} students<br>({percentage:.1f}%)")
+        else:
+            text_labels.append(f"{label}<br>{value} students")
+    
+    fig = go.Figure(go.Sunburst(
+        labels=labels,
+        parents=parents,
+        values=values,
+        text=text_labels,
+        branchvalues="total",
+        hovertemplate='<b>%{label}</b><br>Students: %{value}<br>Percentage: %{percentParent}<extra></extra>',
+        maxdepth=3,
+        marker=dict(
+            colors=colors[:len(labels)],
+            line=dict(color="#FFFFFF", width=3)
+        ),
+        textfont=dict(
+            size=11,
+            color="#2E3440",
+            family="Arial Black"
+        ),
+        insidetextorientation='radial'
+    ))
     
     fig.update_layout(
-        height=600,
+        title="🎯 Student Performance Hierarchy<br><sub>Interactive breakdown by department and grade with student counts</sub>",
+        title_font_size=18,
+        font=dict(color='#2E3440', size=12),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white', size=12),
-        title_font_size=22
+        height=650
     )
+    
     return fig
 
 def create_study_hours_scatter():
@@ -330,7 +483,6 @@ def create_study_hours_scatter():
     
     filtered_df = df[df['Grade'].isin(selected_grades)]
     
-    # Changed to box plot to avoid NaN size issues
     fig = px.box(filtered_df,
                  x='Grade',
                  y='Study_Hours_per_Week',
@@ -359,7 +511,7 @@ def create_study_hours_scatter():
     
     return fig
 
-def create_attendance_impact():
+def create_attendance_impact(theme='auto'):
     min_attendance = df['Attendance (%)'].replace(0, np.nan).min()
     att_bins = [50, 60, 70, 75, 80, 85, 90, 95, 100] if min_attendance >= 50 else [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     
@@ -381,11 +533,16 @@ def create_attendance_impact():
         y=att_data['Final_Score'],
         mode='lines+markers+text',
         name='Average Final Score',
-        line=dict(width=4, color='#00ffaa'),
-        marker=dict(size=12, color='#00ffaa', line=dict(width=2, color='darkgreen')),
+        line=dict(width=4, color='#00AA88'),
+        marker=dict(size=12, color='#00AA88', line=dict(width=2, color='#006B5A')),
         text=[f'Score: {score:.1f}<br>Students: {count}' for score, count in zip(att_data['Final_Score'], att_data['Count'])],
         textposition='top center',
-        textfont=dict(color='white', size=10)
+        textfont=dict(size=10, family='Arial Bold'),
+        hovertemplate='<b>Attendance: %{x:.0f}%</b><br>' +
+                      'Average Final Score: %{y:.1f}<br>' +
+                      'Number of Students: %{customdata}<br>' +
+                      '<extra></extra>',
+        customdata=att_data['Count']
     ))
     
     fig.update_layout(
@@ -394,11 +551,44 @@ def create_attendance_impact():
         yaxis_title='Average Final Score',
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white', size=12),
+        font=dict(size=12),
         title_font_size=22,
         height=500,
-        showlegend=False
+        margin=dict(l=80, r=80, t=100, b=80),
+        showlegend=False,
+        xaxis=dict(
+            title_font_size=14,
+            tickfont=dict(size=12),
+            gridcolor='rgba(128,128,128,0.3)',
+            showgrid=True,
+            zeroline=True,
+            zerolinecolor='rgba(128,128,128,0.5)',
+            showline=True,
+            linecolor='rgba(128,128,128,0.5)',
+            linewidth=1,
+            range=[att_data['Attendance_Mid'].min()-5, att_data['Attendance_Mid'].max()+5]
+        ),
+        yaxis=dict(
+            title_font_size=14,
+            tickfont=dict(size=12),
+            gridcolor='rgba(128,128,128,0.3)',
+            showgrid=True,
+            zeroline=True,
+            zerolinecolor='rgba(128,128,128,0.5)',
+            showline=True,
+            linecolor='rgba(128,128,128,0.5)',
+            linewidth=1
+        )
     )
+    
+    fig.add_trace(go.Scatter(
+        mode='lines',
+        name='Trend',
+        line=dict(dash='dash', width=2, color='rgba(255,100,100,0.8)'),
+        showlegend=False,
+        hoverinfo='skip'
+    ))
+    
     return fig
 
 def create_score_distribution():
@@ -420,7 +610,7 @@ def create_score_distribution():
         ))
     
     fig.update_layout(
-        title="📊 Assessment Performance Breakdown - Score Distribution (Violin Plot)",
+        title="📊 Assessment Performance Breakdown - Score Distribution",
         xaxis_title='Assessment Type',
         yaxis_title='Score',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -490,25 +680,50 @@ def create_stress_heatmap():
         labels=dict(x="Grade", y="Stress Level (1-10)", color="Students"),
         x=stress_pivot.columns,
         y=stress_pivot.index,
-        color_continuous_scale='Blues',
+        color_continuous_scale='RdYlBu_r',
         title="😰 Student Stress vs Academic Performance - Correlation Analysis"
     )
     
     fig.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white', size=12),
+        font=dict(size=12),
         title_font_size=22,
         height=500,
+        margin=dict(l=80, r=120, t=100, b=80),
         coloraxis_colorbar=dict(
             title="Number of Students",
-            title_font=dict(color='white'),
-            tickfont=dict(color='white'),
+            title_font=dict(size=12),
+            tickfont=dict(size=11),
             bgcolor='rgba(255,255,255,0.1)',
-            bordercolor='white',
-            borderwidth=1
+            borderwidth=1,
+            len=0.8
+        ),
+        xaxis=dict(
+            title_font_size=14,
+            tickfont=dict(size=12),
+            showgrid=False
+        ),
+        yaxis=dict(
+            title_font_size=14,
+            tickfont=dict(size=12),
+            showgrid=False
         )
     )
+    
+    for i, stress_level in enumerate(stress_pivot.index):
+        for j, grade in enumerate(stress_pivot.columns):
+            value = stress_pivot.iloc[i, j]
+            if value > 0:
+                text_color = 'white' if value > stress_pivot.values.max() * 0.6 else 'black'
+                fig.add_annotation(
+                    x=j,
+                    y=i,
+                    text=str(value),
+                    showarrow=False,
+                    font=dict(color=text_color, size=11, family='Arial Bold')
+                )
+    
     return fig
 
 def create_sleep_analysis():
@@ -576,100 +791,116 @@ def create_sleep_analysis():
     )
     return fig
 
-def create_parent_education_impact():
-    clean_df = df.dropna(subset=['Parent_Education_Level'])
-    clean_df = clean_df[clean_df['Parent_Education_Level'].str.strip() != '']
+def create_grade_distribution_by_income():
+    df_clean = df.dropna(subset=['Family_Income_Level', 'Grade'])
     
-    if clean_df.empty:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="No valid Parent Education data available",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, xanchor='center', yanchor='middle',
-            showarrow=False,
-            font=dict(size=20, color="white")
-        )
-        fig.update_layout(
-            title="🎓 Parent Education Impact - Family Background vs Academic Success",
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white', size=12),
-            height=500
-        )
-        return fig
+    grade_income = df_clean.groupby(['Family_Income_Level', 'Grade']).size().unstack(fill_value=0)
     
-    parent_ed_data = clean_df.groupby('Parent_Education_Level').agg({
-        'Total_Score': 'mean',
-        'Grade': lambda x: (x == 'A').mean() * 100
-    }).reset_index()
-    
-    parent_ed_data.columns = ['Parent_Education', 'Avg_Score', 'A_Grade_Pct']
-    
-    counts = clean_df.groupby('Parent_Education_Level').size().reset_index(name='Student_Count')
-    parent_ed_data = pd.merge(parent_ed_data, counts, left_on='Parent_Education', right_on='Parent_Education_Level')
-    parent_ed_data = parent_ed_data.drop('Parent_Education_Level', axis=1)
-    
-    parent_ed_data = parent_ed_data.sort_values('Avg_Score', ascending=True)
+    grade_colors = {
+        'A': '#00AA55',
+        'B': '#8B4FB3',
+        'C': '#E67C00',
+        'D': '#0088CC',
+        'F': '#CC3355'
+    }
     
     fig = go.Figure()
     
-    fig.add_trace(go.Bar(
-        x=parent_ed_data['Parent_Education'],
-        y=parent_ed_data['Avg_Score'],
-        name='Average Score',
-        marker_color='#4ecdc4',
-        opacity=0.8,
-        text=[f'{score:.1f}' for score in parent_ed_data['Avg_Score']],
-        textposition='auto',
-        textfont=dict(color='white', size=12, family='Arial Black')
-    ))
+    income_levels = grade_income.index.tolist()
     
-    fig.add_trace(go.Scatter(
-        x=parent_ed_data['Parent_Education'],
-        y=parent_ed_data['A_Grade_Pct'],
-        mode='lines+markers+text',
-        name='% A Grades',
-        yaxis='y2',
-        line=dict(color='#ff6b6b', width=4),
-        marker=dict(size=12, color='#ff6b6b', line=dict(width=2, color='white')),
-        text=[f'{pct:.1f}%' for pct in parent_ed_data['A_Grade_Pct']],
-        textposition='top center',
-        textfont=dict(color='white', size=11, family='Arial Black')
-    ))
+    for grade in ['A', 'B', 'C', 'D', 'F']:
+        if grade in grade_income.columns:
+            fig.add_trace(
+                go.Bar(
+                    x=income_levels,
+                    y=grade_income[grade],
+                    name=f'Grade {grade}',
+                    marker_color=grade_colors[grade],
+                    text=grade_income[grade],
+                    textposition='inside',
+                    textfont=dict(color='white', size=12, family='Arial Bold'),
+                    hovertemplate=f'<b>Grade {grade}</b><br>' +
+                                  'Income Level: %{x}<br>' +
+                                  'Number of Students: %{y}<br>' +
+                                  '<extra></extra>'
+                )
+            )
+    
+    text_color = 'var(--text-primary)'
+    grid_color = 'var(--border-color)'
     
     fig.update_layout(
-        title="🎓 Parent Education Impact - Academic Performance by Family Background",
-        xaxis_title='Parent Education Level',
-        yaxis=dict(
-            title='Average Score',
-            title_font=dict(color='#4ecdc4', size=14),
-            tickfont=dict(color='#4ecdc4', size=12),
-            range=[0, 100]
+        title=dict(
+            text="💰 Income vs Grades - Student Distribution Analysis",
+            font=dict(size=22),
         ),
-        yaxis2=dict(
-            title='Percentage of A Grades',
-            overlaying='y',
-            side='right',
-            title_font=dict(color='#ff6b6b', size=14),
-            tickfont=dict(color='#ff6b6b', size=12),
-            range=[0, max(parent_ed_data['A_Grade_Pct']) + 10]
-        ),
+        xaxis_title="Family Income Level",
+        yaxis_title="Number of Students",
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white', size=12),
-        title_font_size=22,
-        height=500,
-        showlegend=True,
+        font=dict(size=12),
+        height=600,
+        barmode='stack',
+        margin=dict(l=100, r=100, t=120, b=120),
         legend=dict(
-            x=0.02,
-            y=0.98,
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=12),
             bgcolor='rgba(255,255,255,0.1)',
-            bordercolor='white',
-            borderwidth=1,
-            font=dict(size=12)
+            borderwidth=1
         ),
-        margin=dict(l=60, r=60, t=80, b=60)
+        xaxis=dict(
+            title_font_size=14,
+            tickfont=dict(size=12),
+            gridcolor='rgba(128,128,128,0.3)',
+            showgrid=True,
+            zeroline=True,
+            zerolinecolor='rgba(128,128,128,0.5)',
+            showline=True,
+            linecolor='rgba(128,128,128,0.5)',
+            linewidth=1,
+            tickangle=0,
+            categoryorder='array',
+            categoryarray=['Low', 'Medium', 'High']
+        ),
+        yaxis=dict(
+            title_font_size=14,
+            tickfont=dict(size=12),
+            gridcolor='rgba(128,128,128,0.3)',
+            showgrid=True,
+            zeroline=True,
+            zerolinecolor='rgba(128,128,128,0.5)',
+            showline=True,
+            linecolor='rgba(128,128,128,0.5)',
+            linewidth=1
+        )
     )
+    
+    total_students_by_income = df_clean.groupby('Family_Income_Level').size()
+    
+    annotations = []
+    for i, income_level in enumerate(income_levels):
+        total_students = total_students_by_income[income_level]
+        total_height = grade_income.loc[income_level].sum()
+        annotations.append(
+            dict(
+                x=income_level,
+                y=total_height + total_height * 0.05,
+                text=f"Total: {total_students}",
+                showarrow=False,
+                font=dict(size=11, family='Arial Bold', color='yellow'),
+                xanchor='center',
+                bgcolor='black',
+                bordercolor='rgba(255,255,255,0)',
+                borderwidth=1,
+                borderpad=4
+            )
+        )
+    
+    fig.update_layout(annotations=annotations)
     
     return fig
 
@@ -741,7 +972,7 @@ with st.expander("📋 View Dataset", expanded=False):
 
 chart_options = [
     "📊 Grade Distribution", "🏢 Department Performance", "👫 Gender Analysis",
-    "🎯 Performance Hierarchy", "🎓 Parent Education Impact", "📅 Attendance Impact",
+    "🎯 Performance Hierarchy", "💰 Income vs Grades", "📅 Attendance Impact",
     "📈 Score Components", "🌐 Internet Access Effect", "😰 Stress Analysis", "😴 Sleep Impact"
 ]
 
@@ -762,12 +993,12 @@ elif selected_chart == "👫 Gender Analysis":
     st.info("📌 **Insight:** Analyze grade distribution patterns between male and female students to identify any gender-based performance differences.")
 
 elif selected_chart == "🎯 Performance Hierarchy":
-    st.plotly_chart(create_sunburst_chart(), use_container_width=True)
+    st.plotly_chart(create_performance_hierarchy(), use_container_width=True)
     st.info("📌 **Insight:** Interactive hierarchy showing the relationship between departments, gender, and grades. Click segments to explore specific branches.")
 
-elif selected_chart == "🎓 Parent Education Impact":
-    st.plotly_chart(create_parent_education_impact(), use_container_width=True)
-    st.info("📌 **Insight:** Explore how parental education levels affect student performance, A-grade rates, and study habits, revealing the impact of family educational background on academic success.")
+elif selected_chart == "💰 Income vs Grades":
+    st.plotly_chart(create_grade_distribution_by_income(), use_container_width=True)
+    st.info("📌 **Insight:** This visualization shows the distribution of grades across different family income levels using parallel columns, making it easy to compare grade counts between income groups.")
 
 elif selected_chart == "📅 Attendance Impact":
     st.plotly_chart(create_attendance_impact(), use_container_width=True)
