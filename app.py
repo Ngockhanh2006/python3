@@ -647,11 +647,11 @@ def interactive_demographic_analysis(df):
                         x=primary_factor,
                         y='Percentage',
                         color=secondary_factor,
-                        text_auto='.1f',
+                        text=temp_df['Percentage'].round(1).astype(str) + '%',
                         title=f"Distribution by {primary_factor.replace('_', ' ')}",
                         color_discrete_sequence=px.colors.qualitative.Bold
                     )
-                    fig.update_traces(texttemplate='%{text:.1f}%', textposition='inside')
+                    fig.update_traces(textposition='inside')
                     fig.update_layout(yaxis_title='Percentage (%)')
                 else:
                     # Create simple count bar chart
